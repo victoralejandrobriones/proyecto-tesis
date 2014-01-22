@@ -1,7 +1,7 @@
 import wave, audioop
 from sys import argv
 
-#Se agrega el nombre del archivo .wav como argumento
+#Se debe añadir el nombre del archivo .wav como argumento
 if len(argv) > 1:
     file_name = argv[1]
     wav_file = wave.open(file_name, "rb")
