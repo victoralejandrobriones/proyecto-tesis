@@ -5,24 +5,26 @@ import pylab
 from pylab import *
 import time
 
+#Tamaño de muestra
 chunk = 1024
 
 pylab.ion()
-
 if len(sys.argv) < 2:
     print "Uso: %s archivo.wav" % sys.argv[0]
     sys.exit(-1)
 
 #Ventana del graficador
-xAx=pylab.arange(0,100,1)
-yAx=pylab.array([0]*100)
+xAx=arange(0,10,1)
+yAx=array([0]*10)
 
-fig = pylab.figure(1)
+fig = figure(1)
 ax = fig.add_subplot(111)
+ax.set_title("Analizador de ondas de sonido")
+ax.set_xlabel("Muestra")
 ax.grid(True)
-ax.axis([0,100,0,30])
+ax.axis([0,10,0,30])
 line1=ax.plot(xAx,yAx,'-')
-manager = pylab.get_current_fig_manager()
+manager = get_current_fig_manager()
 
 #Se abre el archivo de sonido
 wf = wave.open(sys.argv[1], 'rb')
@@ -38,16 +40,17 @@ stream = p.open(format =
                 output = True)
 
 #Se leen los frames del archivo
-data = wf.readframes(chunk)
-
+data=wf.readframes(chunk)
 t0 = time.time()
-
+i = 0
 while data != "":
     #Se grafican los frames limitando los FPS's
     if time.time()-t0 > 0.001:
-        CurrentXAxis=pylab.arange(len(fromstring(data, "Int16")),len(fromstring(data, "Int16"))+500,1)
-        line1[0].set_data(CurrentXAxis,pylab.array(fromstring(data, "Int16")[-500:]))
-        ax.axis([CurrentXAxis.min(),CurrentXAxis.max(),-100000,100000])
+        #CurrentXAxis=pylab.arange(len(fromstring(data, "Int16")),len(fromstring(data, "Int16"))+500,1)
+        CurrentXAxis=pylab.arange(i, len(fromstring(data, "Int16"))+i)
+        line1[0].set_data(CurrentXAxis,pylab.array(fromstring(data, "Int16")))
+        ax.axis([CurrentXAxis.min(),CurrentXAxis.max(),-50000,50000])
+        i+=(chunk*2)
         manager.canvas.draw()
         t0 = time.time()
     #Los frames se escriben al flujo
