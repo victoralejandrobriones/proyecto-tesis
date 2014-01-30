@@ -26,9 +26,9 @@ class Plot:
         # Create a container
         self.window = Tkinter.Frame(master)
         # Create 2 buttons
-        self.button_left = Tkinter.Button(self.window,text="Play",
+        self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
                                         command=self.threading)
-        self.button_left.pack(side="left")
+        self.button_pp.pack(side="left")
         self.audio = Audio()
         fig = Figure()
         self.ax = fig.add_subplot(111)
@@ -43,13 +43,13 @@ class Plot:
         self.data = self.audio.get_data()        
 
     def stop_threading(self):
-        self.button_left["text"] = "Play"
-        self.button_left["command"] = self.threading
+        self.button_pp["text"] = u"\u25B6"
+        self.button_pp["command"] = self.threading
         self.event = False
 
     def threading(self):
-        self.button_left["text"] = “Pause”
-        self.button_left["command"] = self.stop_threading
+        self.button_pp["text"] = u"\u2758"+""+u"\u2758"
+        self.button_pp["command"] = self.stop_threading
         self.thread = Thread(target = self.update)
         self.event = True
         self.thread.start()
