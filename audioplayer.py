@@ -48,7 +48,7 @@ class Plot:
         self.event = False
 
     def threading(self):
-        self.button_left["text"] = "Stop"
+        self.button_left["text"] = “Pause”
         self.button_left["command"] = self.stop_threading
         self.thread = Thread(target = self.update)
         self.event = True
