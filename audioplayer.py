@@ -5,7 +5,7 @@ import pylab
 from pylab import *
 import time
 
-#Tamaño de muestra
+#Tamano de muestra
 chunk = 1024
 
 pylab.ion()
