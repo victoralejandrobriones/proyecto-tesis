@@ -1,62 +1,71 @@
-import pyaudio
-import wave
-import sys
-import pylab
-from pylab import *
-import time
+import Tkinter
+from threading import Thread, Event
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import numpy as np
+from numpy import *
+import wave, sys, pyaudio, time
 
-#Tamaño de muestra
 chunk = 1024
 
-pylab.ion()
-if len(sys.argv) < 2:
-    print "Uso: %s archivo.wav" % sys.argv[0]
-    sys.exit(-1)
+class Audio:
+    def __init__(self):
+        self.file = wave.open(sys.argv[1], 'rb')
+        p = pyaudio.PyAudio()
+        self.stream = p.open(format = 
+                             p.get_format_from_width(self.file.getsampwidth()),
+                             channels = self.file.getnchannels(),
+                             rate = self.file.getframerate(),
+                             output = True)
+    def get_data(self):
+        self.data = self.file.readframes(chunk)
+        return self.data
 
-#Ventana del graficador
-xAx=arange(0,10,1)
-yAx=array([0]*10)
+class Plot:
+    def __init__(self, master):
+        # Create a container
+        self.window = Tkinter.Frame(master)
+        # Create 2 buttons
+        self.button_left = Tkinter.Button(self.window,text="Play",
+                                        command=self.threading)
+        self.button_left.pack(side="left")
+        self.audio = Audio()
+        fig = Figure()
+        self.ax = fig.add_subplot(111)
+        self.ax.axis([0,chunk*2,-50000,50000])
+        self.line, = self.ax.plot(range(10))
+        self.canvas = FigureCanvasTkAgg(fig,master=master)
+        self.canvas.show()
+        self.canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+        self.window.pack()
+        self.t0 = 0
+        self.frame = 0
+        self.data = self.audio.get_data()        
 
-fig = figure(1)
-ax = fig.add_subplot(111)
-ax.set_title("Analizador de ondas de sonido")
-ax.set_xlabel("Muestra")
-ax.grid(True)
-ax.axis([0,10,0,30])
-line1=ax.plot(xAx,yAx,'-')
-manager = get_current_fig_manager()
+    def stop_threading(self):
+        self.button_left["text"] = "Play"
+        self.button_left["command"] = self.threading
+        self.event = False
 
-#Se abre el archivo de sonido
-wf = wave.open(sys.argv[1], 'rb')
+    def threading(self):
+        self.button_left["text"] = "Stop"
+        self.button_left["command"] = self.stop_threading
+        self.thread = Thread(target = self.update)
+        self.event = True
+        self.thread.start()
 
-#Se inicia pyAudio
-p = pyaudio.PyAudio()
+    def update(self):
+        while self.data != "" and self.event != False:
+            if time.time()-self.t0 > 0.001:
+                CurrentXAxis=np.arange(self.frame, len(fromstring(self.data, "Int16"))+self.frame)
+                self.line.set_data(CurrentXAxis, np.array(np.fromstring(self.data, "Int16")))
+                self.ax.axis([CurrentXAxis.min(),CurrentXAxis.max(),-50000,50000])
+                self.frame+=(chunk*2)
+                self.canvas.draw()
+                self.t0 = time.time()
+            self.audio.stream.write(self.data)
+            self.data = self.audio.get_data()
 
-#Se crea un flujo con los datos del archivo de sonido
-stream = p.open(format =
-                p.get_format_from_width(wf.getsampwidth()),
-                channels = wf.getnchannels(),
-                rate = wf.getframerate(),
-                output = True)
-
-#Se leen los frames del archivo
-data=wf.readframes(chunk)
-t0 = time.time()
-i = 0
-while data != "":
-    #Se grafican los frames limitando los FPS's
-    if time.time()-t0 > 0.001:
-        #CurrentXAxis=pylab.arange(len(fromstring(data, "Int16")),len(fromstring(data, "Int16"))+500,1)
-        CurrentXAxis=pylab.arange(i, len(fromstring(data, "Int16"))+i)
-        line1[0].set_data(CurrentXAxis,pylab.array(fromstring(data, "Int16")))
-        ax.axis([CurrentXAxis.min(),CurrentXAxis.max(),-50000,50000])
-        i+=(chunk*2)
-        manager.canvas.draw()
-        t0 = time.time()
-    #Los frames se escriben al flujo
-    stream.write(data)
-    #Se leen los frames siguientes
-    data = wf.readframes(chunk)
-
-stream.close()
-p.terminate()
+root = Tkinter.Tk()
+plot = Plot(root)
+root.mainloop()
