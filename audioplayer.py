@@ -4,7 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
 from numpy import *
-import wave, sys, pyaudio, time
+import wave, sys, pyaudio, time, audioop
 
 chunk = 1024
 
@@ -17,6 +17,8 @@ class Audio:
                              channels = self.file.getnchannels(),
                              rate = self.file.getframerate(),
                              output = True)
+        print self.file.getframerate()
+        print self.file.getsampwidth()
     def get_data(self):
         self.data = self.file.readframes(chunk)
         return self.data
@@ -34,20 +36,20 @@ class Plot:
 
         fig = Figure()
 
-        self.ax1 = fig.add_subplot(411)
-        self.ax2 = fig.add_subplot(412)
-        self.ax3 = fig.add_subplot(413)
-        self.ax4 = fig.add_subplot(414)
+        #self.ax1 = fig.add_subplot(411)
+        #self.ax2 = fig.add_subplot(412)
+        #self.ax3 = fig.add_subplot(413)
+        self.ax3 = fig.add_subplot(111)
+        #self.ax4 = fig.add_subplot(212)
+        #self.ax1.axis([0,chunk*2,-50000,50000])
+        #self.ax2.axis([0,20,0,100])
+        self.ax3.axis([0,22,0,100])
+        #self.ax4.axis([0,2500,0,60000])
 
-        self.ax1.axis([0,chunk*2,-50000,50000])
-        self.ax2.axis([0,20,0,100])
-        self.ax3.axis([0,20,0,100])
-        self.ax4.axis([0,20,0,100])
-
-        self.line, = self.ax1.plot(range(0))
-        self.line2, = self.ax2.plot(range(0))
+        #self.line, = self.ax1.plot(range(0))
+        #self.line2, = self.ax2.plot(range(0))
         self.line3, = self.ax3.plot(range(0))        
-        self.line4, = self.ax4.plot(range(0))
+        #self.line4, = self.ax4.plot(range(0))
 
         self.canvas = FigureCanvasTkAgg(fig,master=master)
         self.canvas.show()
@@ -73,13 +75,21 @@ class Plot:
         self.plot_thread.start()
 
     def fft(self, pcm, real = False, imaginary = False, both = False):
-        triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])+1
+        triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
         pcm = pcm * triangle
         fft=np.fft.fft(pcm)
         freq=np.fft.fftfreq(np.arange(len(pcm)).shape[-1])[:len(pcm)/2]
         freq=freq * self.audio.file.getframerate()/1000 #make the frequency scale
         if real:
             fftr=10*np.log10(abs(fft.real))[:len(pcm)/2]
+            defv = 64
+            deff = 0
+            defl = 64
+            for i in range(16):
+                print len(fftr[deff:defl])
+                fftr[deff:defl] = np.average(fftr[deff:defl])
+                deff+=(defv)
+                defl+=(defv)
             return (freq, fftr)
         elif imaginary:
             ffti=10*np.log10(abs(fft.imag))[:len(pcm)/2]
@@ -94,16 +104,27 @@ class Plot:
             return (freq, fftr, ffti, fftb)
     
     def update_plot(self):
+        list = []
+        i=0
         while self.data != "" and self.event != False:
             pcm = np.fromstring(self.data, "Int16")
             CurrentXAxis=np.arange(self.frame, len(pcm)+self.frame)
-            fft_data = self.fft(pcm)
-            self.line.set_data(CurrentXAxis, np.array(pcm))
-            self.line2.set_data(fft_data[0], fft_data[1])
-            self.line3.set_data(fft_data[0], fft_data[2])
-            self.line4.set_data(fft_data[0], fft_data[3])
-            self.ax1.axis([CurrentXAxis.min(),CurrentXAxis.max(),-50000,50000])
-            self.frame+=(chunk*2)
+            fft_data = self.fft(pcm, real = True)
+            #self.line.set_data(CurrentXAxis, np.array(pcm))
+            #self.line2.set_data(fft_data[0], fft_data[1])
+            #self.line3.set_data(fft_data[0], fft_data[2])
+            self.line3.set_data(fft_data[0], fft_data[1])
+            #test = 7*audioop.avgpp(pcm, self.audio.file.getsampwidth())
+            #list = range(10*int(self.bassIntensity))
+            #if test > 32000:
+            #    print test
+            #else:
+            #    print 
+            #self.line4.set_ydata(list)
+            #self.line4.set_xdata([100]*len(list))
+            #i+=10
+            #self.ax4.axis([CurrentXAxis.min(),CurrentXAxis.max(),-50000,50000])
+            #self.frame+=(len(list))
             self.canvas.draw()
 
     def update_audio(self):
