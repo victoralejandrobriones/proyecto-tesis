@@ -4,9 +4,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
 from numpy import *
-import wave, sys, pyaudio, time, audioop
+import wave, sys, pyaudio, time, audioop, math, datetime
 
-chunk = 1024
+chunk = 2048
 
 class Audio:
     def __init__(self):
@@ -19,19 +19,26 @@ class Audio:
                              output = True)
         print self.file.getframerate()
         print self.file.getsampwidth()
+        self.duration = self.file.getnframes()/self.file.getframerate()
     def get_data(self):
         self.data = self.file.readframes(chunk)
         return self.data
 
 class Plot:
     def __init__(self, master):
-
+        self.size = 32
+        self.beat_counter = 0
+        self.beat_time = time.time()
+        self.my_values = [0 for i in range(self.size)]
+        self.current_time = 0
+        self.time_counter = 0
         self.window = Tkinter.Frame(master)
-
+        self.time_label = Tkinter.StringVar()
+        Tkinter.Label(master, textvariable=self.time_label).pack()
         self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
                                         command=self.threading)
         self.button_pp.pack(side="left")
-
+        
         self.audio = Audio()
 
         fig = Figure()
@@ -61,11 +68,13 @@ class Plot:
         self.data = self.audio.get_data()
 
     def stop_threading(self):
+        self.current_time = self.time_counter
         self.button_pp["text"] = u"\u25B6"
         self.button_pp["command"] = self.threading
         self.event = False
 
     def threading(self):
+        self.time = time.time()
         self.button_pp["text"] = u"\u2758"+""+u"\u2758"
         self.button_pp["command"] = self.stop_threading
         self.audio_thread = Thread(target = self.update_audio)
@@ -73,6 +82,7 @@ class Plot:
         self.event = True
         self.audio_thread.start()
         self.plot_thread.start()
+
 
     def fft(self, pcm, real = False, imaginary = False, both = False):
         triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
@@ -82,16 +92,55 @@ class Plot:
         freq=freq * self.audio.file.getframerate()/1000 #make the frequency scale
         if real:
             fftr=10*np.log10(abs(fft.real))[:len(pcm)/2]
-            defv = 64
+            defv = len(fftr)/self.size
             deff = 0
-            defl = 64
-            for i in range(16):
-                print len(fftr[deff:defl])
+            defl = len(fftr)/self.size
+            self.time_counter = (time.time()-self.time)+self.current_time
+            self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
+            print "Duracion: ", datetime.timedelta(seconds=self.audio.duration-int(self.time_counter)), "\t",
+            bpm = [False for i in range(self.size)]
+            for i in range(self.size):
                 fftr[deff:defl] = np.average(fftr[deff:defl])
+                try:
+                    real_v = (math.ceil(np.average(fftr[deff:defl])*100)/100)
+                    value = 1*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/1)
+                except:
+                    value = 0
+                the_int = 20
+                try:
+                    if the_int*int(self.my_values[i]/the_int) > the_int*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/the_int) or\
+                            the_int*int(self.my_values[i]/the_int) < the_int*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/the_int):
+                        bpm[i]=True
+                    else:
+                        bpm[i]=False
+                except:
+                    bpm[i]=False
+                self.my_values[i] = math.ceil(np.average(fftr[deff:defl])*100)/100
+                strcolor = "[0;34m" \
+                    if value <=20 else "[0;36m" \
+                    if value <=40 else "[0;32m" \
+                    if value <=60 else "[0;33m" \
+                    if value <=80 else "[0;31m"
+                #print strcolor, 
+                print chr(27)+strcolor+str(value)+chr(27)+"[0m","  ",
                 deff+=(defv)
                 defl+=(defv)
+            if bpm.count(True) >= bpm.count(False):
+                print "OOO ",
+                self.beat_counter+=1
+                if time.time()-self.beat_time >= 1:
+                    print self.beat_counter*60,
+                    self.beat_counter = 0
+                    self.beat_time = time.time()
+            else:
+                print "---",
+            #print self.beat_counter*((time.time()-self.beat_time)*60),
+            #self.beat_counter = 0
+            #self.beat_time = time.time()
+            sys.stdout.write('\r')
+            sys.stdout.flush()
             return (freq, fftr)
-        elif imaginary:
+        """elif imaginary:
             ffti=10*np.log10(abs(fft.imag))[:len(pcm)/2]
             return (freq, ffti)
         elif both:
@@ -101,8 +150,8 @@ class Plot:
             fftr=10*np.log10(abs(fft.real))[:len(pcm)/2]
             ffti=10*np.log10(abs(fft.imag))[:len(pcm)/2]
             fftb=10*np.log10(np.sqrt(fft.real**2+fft.imag**2))[:len(pcm)/2]
-            return (freq, fftr, ffti, fftb)
-    
+            return (freq, fftr, ffti, fftb)"""
+
     def update_plot(self):
         list = []
         i=0
