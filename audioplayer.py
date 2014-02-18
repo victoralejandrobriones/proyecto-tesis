@@ -26,8 +26,10 @@ class Audio:
 
 class Plot:
     def __init__(self, master):
-        self.size = 32
-        self.beat_counter = 0
+        self.times = 0
+        self.size = 2
+        self.beat_counter = [0,1]
+        self.beat_buffer = [0,0]
         self.beat_time = time.time()
         self.my_values = [0 for i in range(self.size)]
         self.current_time = 0
@@ -85,13 +87,15 @@ class Plot:
 
 
     def fft(self, pcm, real = False, imaginary = False, both = False):
-        triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
-        pcm = pcm * triangle
+        #triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
+        #pcm = pcm * triangle
         fft=np.fft.fft(pcm)
         freq=np.fft.fftfreq(np.arange(len(pcm)).shape[-1])[:len(pcm)/2]
-        freq=freq * self.audio.file.getframerate()/1000 #make the frequency scale
+        freq=freq * self.audio.file.getframerate()/1000
+        
         if real:
-            fftr=10*np.log10(abs(fft.real))[:len(pcm)/2]
+            #fftr=10*np.log10(abs(fft.real))[:len(pcm)/2]
+            fftr=10*np.log10(np.sqrt(fft.imag**2+fft.real**2))[:len(pcm)/2]
             defv = len(fftr)/self.size
             deff = 0
             defl = len(fftr)/self.size
@@ -101,38 +105,42 @@ class Plot:
             bpm = [False for i in range(self.size)]
             for i in range(self.size):
                 fftr[deff:defl] = np.average(fftr[deff:defl])
-                try:
-                    real_v = (math.ceil(np.average(fftr[deff:defl])*100)/100)
-                    value = 1*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/1)
-                except:
-                    value = 0
-                the_int = 20
-                try:
-                    if the_int*int(self.my_values[i]/the_int) > the_int*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/the_int) or\
-                            the_int*int(self.my_values[i]/the_int) < the_int*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/the_int):
-                        bpm[i]=True
-                    else:
-                        bpm[i]=False
-                except:
+                #real_v = (math.ceil(np.average(fftr[deff:defl])*100)/100)
+                #value = 1*int((math.ceil(np.average(fftr[deff:defl])*100)/100)/1)
+                value = (math.ceil(np.average(fftr[deff:defl])*100)/100)
+                mult = 5
+                if self.my_values[i] > value:#\
+                        #or self.my_values[i] > mult+value:
+                    bpm[i]=True
+                else:
                     bpm[i]=False
-                self.my_values[i] = math.ceil(np.average(fftr[deff:defl])*100)/100
-                strcolor = "[0;34m" \
-                    if value <=20 else "[0;36m" \
-                    if value <=40 else "[0;32m" \
-                    if value <=60 else "[0;33m" \
-                    if value <=80 else "[0;31m"
+                self.my_values[i] = value
+                strcolor = ("[0;34m", 20) \
+                    if value <=20 else ("[0;36m",40) \
+                    if value <=40 else ("[0;32m",60) \
+                    if value <=60 else ("[0;33m",80) \
+                    if value <=80 else ("[0;31m",0)
                 #print strcolor, 
-                print chr(27)+strcolor+str(value)+chr(27)+"[0m","  ",
+                if np.isinf(value):
+                    value = 0
+                print chr(27)+strcolor[0]+str(int(math.ceil(value)))+chr(27)+"[0m","    \t",
                 deff+=(defv)
                 defl+=(defv)
-            if bpm.count(True) >= bpm.count(False):
-                print "OOO ",
-                self.beat_counter+=1
-                if time.time()-self.beat_time >= 1:
-                    print self.beat_counter*60,
-                    self.beat_counter = 0
-                    self.beat_time = time.time()
+            #print bpm.count(True),"\t",
+            if bpm.count(True)>=bpm.count(False):
+                self.times+=1
+                print "OOO",#self.times,
+                print 60/(self.beat_counter[1]-self.beat_counter[0]),
+                #self.beat_buffer[0] = self.beat_buffer[1]
+                #self.beat_buffer[1] = 60/(self.beat_counter[1]-self.beat_counter[0])
+                #print np.average(self.beat_buffer),
+                if self.times == 1:
+                    self.beat_counter[0] = self.beat_counter[1]
+                    self.beat_counter[1] = time.time()-self.beat_time
+                    #print time.time()-self.beat_time,
+                    #self.beat_time = time.time()
             else:
+                self.times=0
                 print "---",
             #print self.beat_counter*((time.time()-self.beat_time)*60),
             #self.beat_counter = 0
@@ -184,3 +192,4 @@ class Plot:
 root = Tkinter.Tk()
 plot = Plot(root)
 root.mainloop()
+print 
