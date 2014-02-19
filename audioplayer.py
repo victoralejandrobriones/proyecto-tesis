@@ -6,7 +6,7 @@ import numpy as np
 from numpy import *
 import wave, sys, pyaudio, time, audioop, math, datetime
 
-chunk = 2048
+chunk = 1024
 
 class Audio:
     def __init__(self):
@@ -26,9 +26,10 @@ class Audio:
 
 class Plot:
     def __init__(self, master):
+        self.filedata = open(sys.argv[1]+".dat", "w")
         self.times = 0
-        self.size = 2
-        self.beat_counter = [0,1]
+        self.size = 4
+        self.beat_counter = [0,0]
         self.beat_buffer = [0,0]
         self.beat_time = time.time()
         self.my_values = [0 for i in range(self.size)]
@@ -130,13 +131,15 @@ class Plot:
             if bpm.count(True)>=bpm.count(False):
                 self.times+=1
                 print "OOO",#self.times,
-                print 60/(self.beat_counter[1]-self.beat_counter[0]),
+                if self.beat_counter[1]!=0:
+                    print 60/(self.beat_counter[1]-self.beat_counter[0]),
                 #self.beat_buffer[0] = self.beat_buffer[1]
                 #self.beat_buffer[1] = 60/(self.beat_counter[1]-self.beat_counter[0])
                 #print np.average(self.beat_buffer),
                 if self.times == 1:
                     self.beat_counter[0] = self.beat_counter[1]
                     self.beat_counter[1] = time.time()-self.beat_time
+                    self.filedata.write(str(self.time_counter)+", "+str(60/(self.beat_counter[1]-self.beat_counter[0]))+"\n")
                     #print time.time()-self.beat_time,
                     #self.beat_time = time.time()
             else:
@@ -192,4 +195,5 @@ class Plot:
 root = Tkinter.Tk()
 plot = Plot(root)
 root.mainloop()
+plot.filedata.close()
 print 
