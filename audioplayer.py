@@ -84,7 +84,7 @@ class Plot:
         self.plot_thread = Thread(target = self.update_plot)
         self.event = True
         self.audio_thread.start()
-        self.plot_thread.start()
+        #self.plot_thread.start()
 
 
     def fft(self, pcm, real = False, imaginary = False, both = False):
@@ -102,7 +102,7 @@ class Plot:
             defl = len(fftr)/self.size
             self.time_counter = (time.time()-self.time)+self.current_time
             self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
-            print "Duracion: ", datetime.timedelta(seconds=self.audio.duration-int(self.time_counter)), "\t",
+            #print "Duracion: ", datetime.timedelta(seconds=self.audio.duration-int(self.time_counter)), "\t",
             bpm = [False for i in range(self.size)]
             for i in range(self.size):
                 fftr[deff:defl] = np.average(fftr[deff:defl])
@@ -124,15 +124,15 @@ class Plot:
                 #print strcolor, 
                 if np.isinf(value):
                     value = 0
-                print chr(27)+strcolor[0]+str(int(math.ceil(value)))+chr(27)+"[0m","    \t",
+                #print chr(27)+strcolor[0]+str(int(math.ceil(value)))+chr(27)+"[0m","    \t",
                 deff+=(defv)
                 defl+=(defv)
             #print bpm.count(True),"\t",
             if bpm.count(True)>=bpm.count(False):
                 self.times+=1
-                print "OOO",#self.times,
-                if self.beat_counter[1]!=0:
-                    print 60/(self.beat_counter[1]-self.beat_counter[0]),
+                #print "OOO",#self.times,
+                #if self.beat_counter[1]!=0:
+                #    print 60/(self.beat_counter[1]-self.beat_counter[0]),
                 #self.beat_buffer[0] = self.beat_buffer[1]
                 #self.beat_buffer[1] = 60/(self.beat_counter[1]-self.beat_counter[0])
                 #print np.average(self.beat_buffer),
@@ -144,12 +144,12 @@ class Plot:
                     #self.beat_time = time.time()
             else:
                 self.times=0
-                print "---",
+                #print "---",
             #print self.beat_counter*((time.time()-self.beat_time)*60),
             #self.beat_counter = 0
             #self.beat_time = time.time()
-            sys.stdout.write('\r')
-            sys.stdout.flush()
+            #sys.stdout.write('\r')
+            #sys.stdout.flush()
             return (freq, fftr)
         """elif imaginary:
             ffti=10*np.log10(abs(fft.imag))[:len(pcm)/2]
@@ -188,7 +188,11 @@ class Plot:
             self.canvas.draw()
 
     def update_audio(self):
+        mytime = time.time()
         while self.data != "" and self.event != False:
+            #if time.time() - mytime > 0.01:
+            pcm = np.fromstring(self.data, "Int16")
+            self.fft(pcm, real = True)
             self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
 
