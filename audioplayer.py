@@ -5,8 +5,8 @@ from matplotlib.figure import Figure
 import numpy as np
 from numpy import *
 import wave, sys, pyaudio, time, audioop, math, datetime, glob, os, random
+
 files = glob.glob(os.path.join(sys.argv[1], '*.wav'))
-print files
 chunk = 1024
 
 class Audio:
@@ -57,7 +57,7 @@ class Player:
         self.file_label.set(file.split("/")[-1])
         self.audio = Audio(file)
         self.filedata = open(file+".dat", "w")
-    
+
     def threading(self):
         self.time = time.time()
         self.button_pp["text"] = u"\u2758"+""+u"\u2758"
@@ -66,7 +66,7 @@ class Player:
         self.event = True
         self.audio_thread.start()
 
-    def fft(self, pcm, real = False, imaginary = False, both = False):
+    def fft(self, pcm):
         #triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
         #pcm = pcm * triangle
         fft=np.fft.fft(pcm)
@@ -82,8 +82,8 @@ class Player:
                 fftr[deff:defl] = np.average(fftr[deff:defl])
                 value = (math.ceil(np.average(fftr[deff:defl])*100)/100)
                 mult = 5
-                if self.my_values[i] > value:#\
-                        #or self.my_values[i] > mult+value:
+                if self.my_values[i]+mult < value\
+                        or self.my_values[i] > mult+value:
                     bpm[i]=True
                 else:
                     bpm[i]=False
@@ -108,7 +108,7 @@ class Player:
                 self.time_counter = (time.time()-self.time)+self.current_time
                 self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
                 pcm = np.fromstring(self.data, "Int16")
-                self.fft(pcm, real = True)
+                self.fft(pcm)
                 self.audio.stream.write(self.data)
                 self.data = self.audio.get_data()
         if self.data == "":
@@ -116,7 +116,7 @@ class Player:
                 self.set_track(files[random.randint(0, len(files)-1)])
                 self.time_counter = 0
                 self.current_time = 0
-                self.threading()
+                #self.threading()
 
 root = Tkinter.Tk()
 play = Player(root)
