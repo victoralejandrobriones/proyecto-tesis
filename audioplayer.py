@@ -7,10 +7,11 @@ from numpy import *
 import wave, sys, pyaudio, time, audioop, math, datetime, glob, os, random
 
 files = glob.glob(os.path.join(sys.argv[1], '*.wav'))
-chunk = 1024
+chunk = 44
 
 class Audio:
     def __init__(self, file):
+        self.chunk_counter = 0
         self.file_name = file
         self.file = wave.open(self.file_name, 'rb')
         p = pyaudio.PyAudio()
@@ -20,12 +21,16 @@ class Audio:
                              rate = self.file.getframerate(),
                              output = True)
         self.duration = self.file.getnframes()/self.file.getframerate()
+        chunk = self.file.getnframes()/(self.duration*1000)
+    
     def get_data(self):
         self.data = self.file.readframes(chunk)
+        self.chunk_counter += chunk
+        self.current_time = float(self.chunk_counter)/self.file.getframerate()
         return self.data
 
 class Player:
-    def __init__(self, master):
+    def __init__(self):#, master):
         self.times = 0
         self.size = 4
         self.beat_counter = [0,0]
@@ -33,35 +38,35 @@ class Player:
         self.beat_time = time.time()
         self.my_values = [0 for i in range(self.size)]
         self.current_time = 0
-        self.time_counter = 0
-        self.window = master
-        self.time_label = Tkinter.StringVar()
-        self.file_label = Tkinter.StringVar()
-        Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
-        self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
-                                        command=self.threading)
-        self.button_pp.grid(row=1,column=0)
-        Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
+        #self.time_counter = 0
+        #self.window = master
+        #self.time_label = Tkinter.StringVar()
+        #self.file_label = Tkinter.StringVar()
+        #Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
+        #self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
+        #                                command=self.play)
+        #self.button_pp.grid(row=1,column=0)
+        #Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
         self.frame = 0
         self.set_track(files[random.randint(0, len(files)-1)])
-        self.window.mainloop()
+        #self.window.mainloop()
 
-    def stop_threading(self):
-        self.current_time = self.time_counter
-        self.button_pp["text"] = u"\u25B6"
-        self.button_pp["command"] = self.threading
+    def stop(self):
+        self.current_time = self.audio.current_time
+        #self.button_pp["text"] = u"\u25B6"
+        #self.button_pp["command"] = self.play
         self.event = False
 
     def set_track(self, file):
-        print "Playing:",file.split("/")[-1]
-        self.file_label.set(file.split("/")[-1])
+        self.filename = file.split("/")[-1]
+        #self.file_label.set(file.split("/")[-1])
         self.audio = Audio(file)
         self.filedata = open(file+".dat", "w")
 
-    def threading(self):
+    def play(self):
         self.time = time.time()
-        self.button_pp["text"] = u"\u2758"+""+u"\u2758"
-        self.button_pp["command"] = self.stop_threading
+        #self.button_pp["text"] = u"\u2758"+""+u"\u2758"
+        #self.button_pp["command"] = self.stop
         self.audio_thread = Thread(target = self.update_audio)
         self.event = True
         self.audio_thread.start()
@@ -72,6 +77,7 @@ class Player:
         fft=np.fft.fft(pcm)
         freq=np.fft.fftfreq(np.arange(len(pcm)).shape[-1])[:len(pcm)/2]
         freq=freq * self.audio.file.getframerate()/1000
+        print "Playing:",self.filename, "\tTime:", datetime.timedelta(seconds=self.audio.duration-int(self.audio.current_time)),
         if real:
             fftr=10*np.log10(np.sqrt(fft.imag**2+fft.real**2))[:len(pcm)/2]
             defv = len(fftr)/self.size
@@ -96,28 +102,55 @@ class Player:
                 self.times+=1
                 if self.times == 1:
                     self.beat_counter[0] = self.beat_counter[1]
-                    self.beat_counter[1] = time.time()-self.beat_time
-                    self.filedata.write(str(self.time_counter)+", "+str(60/(self.beat_counter[1]-self.beat_counter[0]))+"\n")
+                    self.beat_counter[1] = self.audio.current_time
+                    self.filedata.write(str(self.audio.current_time)+", "+str(60/(self.beat_counter[1]-self.beat_counter[0]))+"\n")
             else:
                 self.times=0
+            sys.stdout.write('\r')
+            sys.stdout.flush()
             return (freq, fftr)
 
     def update_audio(self):
         self.data = self.audio.get_data()
         while self.data != "" and self.event != False:
-                self.time_counter = (time.time()-self.time)+self.current_time
-                self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
+                #self.time_counter = (time.time()-self.time)+self.current_time
+                #self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
                 pcm = np.fromstring(self.data, "Int16")
                 self.fft(pcm)
                 self.audio.stream.write(self.data)
                 self.data = self.audio.get_data()
         if self.data == "":
                 self.filedata.close()
-                self.set_track(files[random.randint(0, len(files)-1)])
-                self.time_counter = 0
+                #self.set_track(files[random.randint(0, len(files)-1)])
+                #self.time_counter = 0
                 self.current_time = 0
-                #self.threading()
+                #self.play()
+
+class Window:
+    
+    def __init__(self, master):
+        self.player = Player()
+        self.window = master
+        self.time_label = Tkinter.StringVar()
+        self.file_label = Tkinter.StringVar()
+        Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
+        self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
+                                        command=self.play)
+        self.button_pp.grid(row=1,column=0)
+        Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
+        self.window.mainloop()
+
+    def play(self):
+        self.button_pp["text"] = u"\u2758"+""+u"\u2758"
+        self.button_pp["command"] = self.stop
+        self.player.play()
+    
+
+    def stop(self):
+        self.button_pp["text"] = u"\u25B6"
+        self.button_pp["command"] = self.play
+        self.player.stop()
 
 root = Tkinter.Tk()
-play = Player(root)
+window = Window(root)
 print
