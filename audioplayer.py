@@ -59,11 +59,11 @@ class Player:
 
     def set_track(self, file):
         self.filename = file.split("/")[-1]
-        #self.file_label.set(file.split("/")[-1])
         self.audio = Audio(file)
         self.filedata = open(file+".dat", "w")
 
     def play(self):
+        self.file_label.set(self.filename)
         self.time = time.time()
         #self.button_pp["text"] = u"\u2758"+""+u"\u2758"
         #self.button_pp["command"] = self.stop
@@ -71,13 +71,22 @@ class Player:
         self.event = True
         self.audio_thread.start()
 
+    def set_gui(self, _time, _filename):
+        self.t = time.time()
+        self.play_time = _time
+        self.file_label = _filename
+
     def fft(self, pcm):
         #triangle=np.array(range(len(pcm)/2)+range(len(pcm)/2)[::-1])
         #pcm = pcm * triangle
         fft=np.fft.fft(pcm)
         freq=np.fft.fftfreq(np.arange(len(pcm)).shape[-1])[:len(pcm)/2]
         freq=freq * self.audio.file.getframerate()/1000
-        print "Playing:",self.filename, "\tTime:", datetime.timedelta(seconds=self.audio.duration-int(self.audio.current_time)),
+        current_time = datetime.timedelta(seconds=self.audio.duration-int(self.audio.current_time))
+        if time.time()-self.t >=0.3:
+            self.play_time.set(str(current_time))
+            self.t = time.time()
+        print "Playing:",self.filename, "\tTime:", current_time,
         if real:
             fftr=10*np.log10(np.sqrt(fft.imag**2+fft.real**2))[:len(pcm)/2]
             defv = len(fftr)/self.size
@@ -121,10 +130,10 @@ class Player:
                 self.data = self.audio.get_data()
         if self.data == "":
                 self.filedata.close()
-                #self.set_track(files[random.randint(0, len(files)-1)])
+                self.set_track(files[random.randint(0, len(files)-1)])
                 #self.time_counter = 0
                 self.current_time = 0
-                #self.play()
+                self.play()
 
 class Window:
     
@@ -143,8 +152,8 @@ class Window:
     def play(self):
         self.button_pp["text"] = u"\u2758"+""+u"\u2758"
         self.button_pp["command"] = self.stop
+        self.player.set_gui(self.time_label, self.file_label)
         self.player.play()
-    
 
     def stop(self):
         self.button_pp["text"] = u"\u25B6"
