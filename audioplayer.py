@@ -1,3 +1,5 @@
+from analizer import Analizer
+###
 import Tkinter
 from threading import Thread, Event
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -19,7 +21,7 @@ class Audio:
                              channels = self.file.getnchannels(),
                              rate = self.file.getframerate(),
                              output = True)
-                             self.duration = self.file.getnframes()/self.file.getframerate()
+        self.duration = self.file.getnframes()/self.file.getframerate()
         self.chunk = self.file.getnframes()/(self.duration*1000)
     
     def get_data(self):
@@ -48,7 +50,7 @@ class Player:
         #Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
         self.frame = 0
         self.set_track(files[random.randint(0, len(files)-1)])
-    #self.window.mainloop()
+        #self.window.mainloop()
     
     def stop(self):
         self.current_time = self.audio.current_time
@@ -119,13 +121,8 @@ class Player:
             return (freq, fftr)
     
     def data_analizer(self, current_track_data_file):
-        with open(current_track_data_file, "r") as f:
-            data_list = f.readlines()
-        data_values = []
-        for element in data_list:
-            data_values.append({element.split(", ")[0]:float(element.split(", ")[1])})
-        for value in data_values:
-            print value
+        a = Analizer(current_track_data_file)
+        a.find_patterns()
     
     def update_audio(self):
         self.data = self.audio.get_data()
@@ -153,8 +150,8 @@ class Window:
         Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
         self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
                                         command=self.play)
-                                        self.button_pp.grid(row=1,column=0)
-                                        Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
+        self.button_pp.grid(row=1,column=0)
+        Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
         self.window.mainloop()
     
     def play(self):
