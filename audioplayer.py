@@ -61,7 +61,10 @@ class Player:
     def set_track(self, file):
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
-        self.next_track = self.data_analizer(file+".dat")
+        try:
+            self.next_track = self.data_analizer(file+".dat")
+        except:
+            pass
         self.filedata = open(file+".dat", "w")
     
     def play(self):
@@ -120,9 +123,21 @@ class Player:
             sys.stdout.flush()
             return (freq, fftr)
     
-    def data_analizer(self, current_track_data_file):
-        a = Analizer(current_track_data_file)
-        a.find_patterns()
+    def next_track(self, current_file, current_patterns):
+        patterns = []
+        for file_name in files:
+            if file_name+".dat" != current_file:
+                try:
+                    a = Analizer(file_name+".dat")
+                    patterns.append({file_name:a.find_patterns()})
+                except:
+                    pass
+
+    def data_analizer(self, current_file):
+        a = Analizer(current_file)
+        patterns = a.find_patterns()
+        self.next_track(current_file, patterns)
+        return patterns
     
     def update_audio(self):
         self.data = self.audio.get_data()

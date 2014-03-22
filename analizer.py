@@ -7,7 +7,7 @@ class Analizer:
             data_list = f.readlines()
         self.data_values = []
         for element in data_list:
-            self.data_values.append((int(math.ceil(float(element.split(", ")[0]))),int(math.ceil(float(element.split(", ")[1]))/10)*10))
+            self.data_values.append((float(element.split(", ")[0]),int(math.ceil(float(element.split(", ")[1]))/10)*10))
 
     def find_positions(self):
         values = {}
@@ -26,6 +26,43 @@ class Analizer:
                 positions.append(i)
         return {str(value):positions}
 
+    def best_match(self, patterns):
+        best_matches = []
+        for element in self.patterns:
+            for _dict in element:
+                for key in _dict:
+                    pattern = _dict[key]
+                    p_size = len(pattern)
+                    for m_element in patterns:
+                        for m_dict in m_element:
+                            for m_key in m_dict:
+                                m_pattern = m_dict[m_key]
+                                m_size = len(m_pattern)
+                                validator = []
+                                p_last = 0
+                                m_last = 0
+                                size = p_size if p_size <= m_size else m_size
+                                for iterator in range(size):
+                                    if iterator == 0:
+                                        p_last = pattern[iterator]
+                                        m_last = m_pattern[iterator]
+                                    else:
+                                        p_value = pattern[iterator]
+                                        m_value = m_pattern[iterator]
+                                        p_comparator = (p_value >= p_last)
+                                        m_comparator = (m_value >= m_last)
+                                        comparator = (p_comparator == m_comparator)
+                                        validator.append(comparator)
+                                comparator = True
+                                for value in validator:
+                                    if value != True:
+                                        comparator = False
+                                if comparator:
+                                    if size != 1:
+                                        best_matches.append((key, m_key, validator))
+                                        print size, key, m_key, validator
+                                        print "*************"
+                                
     def find_patterns(self):
         chk_values = []
         chk_positions = []
@@ -34,7 +71,6 @@ class Analizer:
         for i in range(len(self.data_values)):
             value = str(self.data_values[i][1])
             if value not in chk_values and i not in chk_positions:
-                #print value, self.positions[value]
                 patterns = []
                 for j in self.positions[value]:
                     pattern = []
@@ -47,11 +83,13 @@ class Analizer:
                         else:
                             break
                         k+=1
-                    print j, pattern
-                    patterns.append(pattern)
+                    patterns.append({self.data_values[j][0]:pattern})
                 self.patterns.append(patterns)
                 chk_values.append(value)
+        return self.patterns
 
 if __name__ == '__main__':
     a = Analizer(sys.argv[1])
     a.find_patterns()
+    b = Analizer(sys.argv[2])
+    a.best_match(b.find_patterns())
