@@ -5,6 +5,7 @@ from threading import Thread, Event
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
+from operator import itemgetter
 from numpy import *
 import wave, sys, pyaudio, time, audioop, math, datetime, glob, os, random
 
@@ -51,7 +52,7 @@ class Player:
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
         try:
-            self.next_track = self.data_analizer(file+".dat")
+            self.new_track = self.next_track(file+".dat")
         except:
             pass
         self.filedata = open(file+".dat", "w")
@@ -110,8 +111,9 @@ class Player:
             sys.stdout.flush()
             return (freq, fftr)
     
-    def next_track(self, current_file, current_patterns):
+    def data_analizer(self, current_file, current_patterns):
         patterns = []
+        number = 0
         for file_name in files:
             if file_name+".dat" != current_file:
                 try:
@@ -123,15 +125,34 @@ class Player:
         for next_file in patterns:
             matches = next_file[1].best_match(current_patterns)
             print next_file[0]
+            match_filter = []
             for match in matches:
                 if float(match[0]) < float(match[1]):
-                    print match[0], match[1], len(match[2])
-            print
+                    match_filter.append([match[1], match[0], len(match[2])])
+            last = None
+            dict_list = []
+            match_dict = []
+            for match in sorted(match_filter, key=itemgetter(0)):
+                if last != match[0]:
+                    if last!= None:
+                        match_dict.append({last:dict_list})
+                    last = match[0]
+                    dict_list = []
+                dict_list.append([match[1], match[2]])
+            for match in reversed(match_dict):            
+                self.best_option(match)
+            
+    def best_option(self, match):
+        matching = float(match.keys()[0])
+        for element in sorted(match[match.keys()[0]], key=itemgetter(0)):
+            number = matching - element[0]
+            print number,
+        print
 
-    def data_analizer(self, current_file):
+    def next_track(self, current_file):
         a = Analizer(current_file)
         patterns = a.find_patterns()
-        self.next_track(current_file, patterns)
+        self.data_analizer(current_file, patterns)
         return patterns
     
     def update_audio(self):
