@@ -39,23 +39,12 @@ class Player:
         self.beat_time = time.time()
         self.my_values = [0 for i in range(self.size)]
         self.current_time = 0
-        #self.time_counter = 0
-        #self.window = master
-        #self.time_label = Tkinter.StringVar()
-        #self.file_label = Tkinter.StringVar()
-        #Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
-        #self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
-        #                                command=self.play)
-        #self.button_pp.grid(row=1,column=0)
-        #Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
         self.frame = 0
         self.set_track(files[random.randint(0, len(files)-1)])
-        #self.window.mainloop()
+
     
     def stop(self):
         self.current_time = self.audio.current_time
-        #self.button_pp["text"] = u"\u25B6"
-        #self.button_pp["command"] = self.play
         self.event = False
     
     def set_track(self, file):
@@ -70,8 +59,6 @@ class Player:
     def play(self):
         self.file_label.set(self.filename)
         self.time = time.time()
-        #self.button_pp["text"] = u"\u2758"+""+u"\u2758"
-        #self.button_pp["command"] = self.stop
         self.audio_thread = Thread(target = self.update_audio)
         self.event = True
         self.audio_thread.start()
@@ -128,10 +115,18 @@ class Player:
         for file_name in files:
             if file_name+".dat" != current_file:
                 try:
-                    a = Analizer(file_name+".dat")
-                    patterns.append({file_name:a.find_patterns()})
+                    analizer = Analizer(file_name+".dat")
+                    analizer.find_patterns()
+                    patterns.append([file_name, analizer])
                 except:
                     pass
+        for next_file in patterns:
+            matches = next_file[1].best_match(current_patterns)
+            print next_file[0]
+            for match in matches:
+                if float(match[0]) < float(match[1]):
+                    print match[0], match[1], len(match[2])
+            print
 
     def data_analizer(self, current_file):
         a = Analizer(current_file)
@@ -142,18 +137,16 @@ class Player:
     def update_audio(self):
         self.data = self.audio.get_data()
         while self.data != "" and self.event != False:
-            #self.time_counter = (time.time()-self.time)+self.current_time
-            #self.time_label.set(str(datetime.timedelta(seconds=self.audio.duration-int(self.time_counter))))
             pcm = np.fromstring(self.data, "Int16")
             self.freq_analizer(pcm)
-            self.audio.stream.write(self.data)
+            #self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
         if self.data == "":
             self.filedata.close()
             #self.set_track(files[random.randint(0, len(files)-1)])
             #self.time_counter = 0
             self.current_time = 0
-#self.play()
+            #self.play()
 
 class Window:
     
@@ -180,6 +173,7 @@ class Window:
         self.button_pp["command"] = self.play
         self.player.stop()
 
-root = Tkinter.Tk()
-window = Window(root)
-print
+if __name__ == '__main__':
+    root = Tkinter.Tk()
+    window = Window(root)
+    print

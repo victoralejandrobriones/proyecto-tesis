@@ -55,13 +55,14 @@ class Analizer:
                                         validator.append(comparator)
                                 comparator = True
                                 for value in validator:
-                                    if value != True:
+                                    if not value:
                                         comparator = False
                                 if comparator:
                                     if size != 1:
                                         best_matches.append((key, m_key, validator))
-                                        print size, key, m_key, validator
-                                        print "*************"
+                                        #print size, key, m_key, validator
+                                        #print "*************"
+        return best_matches
                                 
     def find_patterns(self):
         chk_values = []
@@ -92,4 +93,6 @@ if __name__ == '__main__':
     a = Analizer(sys.argv[1])
     a.find_patterns()
     b = Analizer(sys.argv[2])
-    a.best_match(b.find_patterns())
+    matches = a.best_match(b.find_patterns())
+    for match in matches:
+        print match
