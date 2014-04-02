@@ -55,7 +55,7 @@ class Player:
         try:
             self.new_track = self.next_track(file+".dat")
         except:
-            pass
+            self.new_track = files[random.randint(0, len(files)-1)]
         self.filedata = open(file+".dat", "w")
     
     def play(self):
@@ -115,6 +115,7 @@ class Player:
     def data_analizer(self, current_file, current_patterns):
         patterns = []
         number = 0
+        list_of_selections = []
         for file_name in files:
             if file_name+".dat" != current_file:
                 try:
@@ -125,7 +126,6 @@ class Player:
                     pass
         for next_file in patterns:
             matches = next_file[1].best_match(current_patterns)
-            print next_file[0]
             match_filter = []
             for match in matches:
                 if float(match[0]) < float(match[1]):
@@ -143,22 +143,35 @@ class Player:
             selection = []
             for match in reversed(match_dict):            
                 selection.append(self.best_option(match))
-                #print selection[-1]
             allow_time = self.audio.real_duration
-            allow_time = allow_time-(allow_time*.05)
-            print allow_time
+            allow_time = allow_time-(allow_time*.15)
             filter_selection = []
             for element in selection:
                 if element[0] > allow_time:
                     filter_selection.append(element)
+            small_time = 0
+            for sel in sorted(filter_selection, key=itemgetter(1)):
+                if sel[2]!=0:
+                    if small_time == 0:
+                        small_time = sel
+                    if small_time[1] > sel[1]:
+                        small_time = sel
+            list_of_selections.append([next_file[0],small_time])
+        best_selection = None
+        small_time = None
+        for i in range(len(list_of_selections)):
+            if small_time == None:
+                small_time = list_of_selections[i][1][1]
+            if small_time < list_of_selections[i][1][1]:
+                small_time = list_of_selections[i][1][1]
+                best_selection = list_of_selections[i][0]
+        return best_selection
 
     def best_option(self, match):
         matching = float(match.keys()[0])
-        #print matching,":",
         times = []
         intn = []
         for element in reversed(sorted(match[match.keys()[0]], key=itemgetter(1))):
-            #print "|", element[0], element[1],
             times.append(element[0])
             intn.append(element[1])
         max = 0
@@ -173,22 +186,21 @@ class Player:
     def next_track(self, current_file):
         a = Analizer(current_file)
         patterns = a.find_patterns()
-        self.data_analizer(current_file, patterns)
-        return patterns
+        return self.data_analizer(current_file, patterns)
     
     def update_audio(self):
         self.data = self.audio.get_data()
         while self.data != "" and self.event != False:
             pcm = np.fromstring(self.data, "Int16")
             self.freq_analizer(pcm)
-            #self.audio.stream.write(self.data)
+            self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
         if self.data == "":
             self.filedata.close()
-            #self.set_track(files[random.randint(0, len(files)-1)])
-            #self.time_counter = 0
+            self.set_track(self.new_track)
+            self.time_counter = 0
             self.current_time = 0
-            #self.play()
+            self.play()
 
 class Window:
     
