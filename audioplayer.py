@@ -23,6 +23,7 @@ class Audio:
                              rate = self.file.getframerate(),
                              output = True)
         self.duration = self.file.getnframes()/self.file.getframerate()
+        self.real_duration = self.file.getnframes()/float(self.file.getframerate())
         self.chunk = self.file.getnframes()/(self.duration*1000)
     
     def get_data(self):
@@ -75,7 +76,7 @@ class Player:
         fft=np.fft.fft(pcm)
         freq=np.fft.fftfreq(np.arange(len(pcm)).shape[-1])[:len(pcm)/2]
         freq=freq * self.audio.file.getframerate()/1000
-        current_time = datetime.timedelta(seconds=self.audio.duration-int(self.audio.current_time))
+        current_time = datetime.timedelta(seconds=int(self.audio.duration)-int(self.audio.current_time))
         if time.time()-self.t >=0.3:
             self.play_time.set(str(current_time))
             self.t = time.time()
@@ -139,15 +140,35 @@ class Player:
                     last = match[0]
                     dict_list = []
                 dict_list.append([match[1], match[2]])
+            selection = []
             for match in reversed(match_dict):            
-                self.best_option(match)
-            
+                selection.append(self.best_option(match))
+                #print selection[-1]
+            allow_time = self.audio.real_duration
+            allow_time = allow_time-(allow_time*.05)
+            print allow_time
+            filter_selection = []
+            for element in selection:
+                if element[0] > allow_time:
+                    filter_selection.append(element)
+
     def best_option(self, match):
         matching = float(match.keys()[0])
-        for element in sorted(match[match.keys()[0]], key=itemgetter(0)):
-            number = matching - element[0]
-            print number,
-        print
+        #print matching,":",
+        times = []
+        intn = []
+        for element in reversed(sorted(match[match.keys()[0]], key=itemgetter(1))):
+            #print "|", element[0], element[1],
+            times.append(element[0])
+            intn.append(element[1])
+        max = 0
+        sel_time = 0
+        for i in range(len(intn)):
+            if matching - times[i] > matching/3:
+                if intn[i]>max:
+                    max = intn[i]
+                    sel_time = times[i]
+        return matching, sel_time, max
 
     def next_track(self, current_file):
         a = Analizer(current_file)
