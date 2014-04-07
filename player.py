@@ -1,39 +1,15 @@
+from audio import Audio
 from analizer import Analizer
 ###
-import Tkinter
 from threading import Thread, Event
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 import numpy as np
 from operator import itemgetter
 from numpy import *
-import wave, sys, pyaudio, time, audioop, math, datetime, glob, os, random
-
-files = glob.glob(os.path.join(sys.argv[1], '*.wav'))
-
-class Audio:
-    def __init__(self, file):
-        self.chunk_counter = 0
-        self.file_name = file
-        self.file = wave.open(self.file_name, 'rb')
-        p = pyaudio.PyAudio()
-        self.stream = p.open(format =
-                             p.get_format_from_width(self.file.getsampwidth()),
-                             channels = self.file.getnchannels(),
-                             rate = self.file.getframerate(),
-                             output = True)
-        self.duration = self.file.getnframes()/self.file.getframerate()
-        self.real_duration = self.file.getnframes()/float(self.file.getframerate())
-        self.chunk = self.file.getnframes()/(self.duration*1000)
-    
-    def get_data(self):
-        self.data = self.file.readframes(self.chunk)
-        self.chunk_counter += self.chunk
-        self.current_time = float(self.chunk_counter)/self.file.getframerate()
-        return self.data
+import sys, time, math, datetime, random
 
 class Player:
-    def __init__(self):#, master):
+    def __init__(self, files):#, master):
+        self.files = files
         self.times = 0
         self.size = 8
         self.beat_counter = [0,0]
@@ -42,8 +18,10 @@ class Player:
         self.my_values = [0 for i in range(self.size)]
         self.current_time = 0
         self.frame = 0
-        self.set_track(files[random.randint(0, len(files)-1)])
-
+        self.set_track(self.files[random.randint(0, len(self.files)-1)])
+    
+    def transition(old_track, new_track):
+        pass
     
     def stop(self):
         self.current_time = self.audio.current_time
@@ -55,7 +33,7 @@ class Player:
         try:
             self.new_track = self.next_track(file+".dat")
         except:
-            self.new_track = files[random.randint(0, len(files)-1)]
+            self.new_track = self.files[random.randint(0, len(self.files)-1)]
         self.filedata = open(file+".dat", "w")
     
     def play(self):
@@ -116,7 +94,7 @@ class Player:
         patterns = []
         number = 0
         list_of_selections = []
-        for file_name in files:
+        for file_name in self.files:
             if file_name+".dat" != current_file:
                 try:
                     analizer = Analizer(file_name+".dat")
@@ -141,7 +119,7 @@ class Player:
                     dict_list = []
                 dict_list.append([match[1], match[2]])
             selection = []
-            for match in reversed(match_dict):            
+            for match in reversed(match_dict):
                 selection.append(self.best_option(match))
             allow_time = self.audio.real_duration
             allow_time = allow_time-(allow_time*.15)
@@ -166,7 +144,7 @@ class Player:
                 small_time = list_of_selections[i][1][1]
                 best_selection = list_of_selections[i][0]
         return best_selection
-
+    
     def best_option(self, match):
         matching = float(match.keys()[0])
         times = []
@@ -182,7 +160,7 @@ class Player:
                     max = intn[i]
                     sel_time = times[i]
         return matching, sel_time, max
-
+    
     def next_track(self, current_file):
         a = Analizer(current_file)
         patterns = a.find_patterns()
@@ -193,7 +171,7 @@ class Player:
         while self.data != "" and self.event != False:
             pcm = np.fromstring(self.data, "Int16")
             self.freq_analizer(pcm)
-            self.audio.stream.write(self.data)
+            #self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
         if self.data == "":
             self.filedata.close()
@@ -201,33 +179,3 @@ class Player:
             self.time_counter = 0
             self.current_time = 0
             self.play()
-
-class Window:
-    
-    def __init__(self, master):
-        self.player = Player()
-        self.window = master
-        self.time_label = Tkinter.StringVar()
-        self.file_label = Tkinter.StringVar()
-        Tkinter.Label(self.window, textvariable=self.file_label).grid(row=0)
-        self.button_pp = Tkinter.Button(self.window,text=u"\u25B6",
-                                        command=self.play)
-        self.button_pp.grid(row=1,column=0)
-        Tkinter.Label(self.window, textvariable=self.time_label).grid(row=1,column=1)
-        self.window.mainloop()
-    
-    def play(self):
-        self.button_pp["text"] = u"\u2758"+u"\u2758"
-        self.button_pp["command"] = self.stop
-        self.player.set_gui(self.time_label, self.file_label)
-        self.player.play()
-    
-    def stop(self):
-        self.button_pp["text"] = u"\u25B6"
-        self.button_pp["command"] = self.play
-        self.player.stop()
-
-if __name__ == '__main__':
-    root = Tkinter.Tk()
-    window = Window(root)
-    print
