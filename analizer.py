@@ -60,8 +60,8 @@ class Analizer:
                                 if comparator:
                                     if size != 1:
                                         best_matches.append((key, m_key, validator))
-                                        #print size, key, m_key, validator
-                                        #print "*************"
+                                        print size, key, m_key, validator
+                                        print "*************"
         return best_matches
                                 
     def find_patterns(self):

@@ -29,12 +29,13 @@ class Player:
     
     def set_track(self, file):
         self.filename = file.split("/")[-1]
+        self.filedata = open(file+".dat", "w")
         self.audio = Audio(file)
         try:
-            self.new_track = self.next_track(file+".dat")
+            self.next_track(file+".dat")
         except:
+        #    print "som tin wung"
             self.new_track = self.files[random.randint(0, len(self.files)-1)]
-        self.filedata = open(file+".dat", "w")
     
     def play(self):
         self.file_label.set(self.filename)
@@ -103,9 +104,11 @@ class Player:
                 except:
                     pass
         for next_file in patterns:
+            print next_file
             matches = next_file[1].best_match(current_patterns)
             match_filter = []
             for match in matches:
+                print match
                 if float(match[0]) < float(match[1]):
                     match_filter.append([match[1], match[0], len(match[2])])
             last = None
@@ -143,6 +146,7 @@ class Player:
             if small_time < list_of_selections[i][1][1]:
                 small_time = list_of_selections[i][1][1]
                 best_selection = list_of_selections[i][0]
+        print best_selection        
         return best_selection
     
     def best_option(self, match):
@@ -163,8 +167,8 @@ class Player:
     
     def next_track(self, current_file):
         a = Analizer(current_file)
-        patterns = a.find_patterns()
-        return self.data_analizer(current_file, patterns)
+        print a.find_patterns()
+        self.new_track = self.data_analizer(current_file, patterns)
     
     def update_audio(self):
         self.data = self.audio.get_data()
@@ -176,6 +180,7 @@ class Player:
         if self.data == "":
             self.filedata.close()
             self.set_track(self.new_track)
+            #self.set_track(self.new_track)
             self.time_counter = 0
             self.current_time = 0
             self.play()
