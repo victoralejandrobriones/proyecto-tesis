@@ -2,9 +2,7 @@ import sys
 import math
 
 class Analizer:
-    def __init__(self, file):
-        with open(file, "r") as f:
-            data_list = f.readlines()
+    def __init__(self, data_list):
         self.data_values = []
         for element in data_list:
             self.data_values.append((float(element.split(", ")[0]),int(math.ceil(float(element.split(", ")[1]))/10)*10))
@@ -60,8 +58,8 @@ class Analizer:
                                 if comparator:
                                     if size != 1:
                                         best_matches.append((key, m_key, validator))
-                                        print size, key, m_key, validator
-                                        print "*************"
+                                        #print size, key, m_key, validator
+                                        #print "*************"
         return best_matches
                                 
     def find_patterns(self):
@@ -90,9 +88,11 @@ class Analizer:
         return self.patterns
 
 if __name__ == '__main__':
-    a = Analizer(sys.argv[1])
+    filea = open(sys.argv[1], "r").readlines()
+    a = Analizer(filea)
     a.find_patterns()
-    b = Analizer(sys.argv[2])
+    fileb = open(sys.argv[2], "r").readlines()
+    b = Analizer(fileb)
     matches = a.best_match(b.find_patterns())
     for match in matches:
         print match
