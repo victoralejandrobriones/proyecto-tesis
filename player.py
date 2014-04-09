@@ -18,7 +18,9 @@ class Player:
         self.my_values = [0 for i in range(self.size)]
         self.current_time = 0
         self.frame = 0
-        self.set_track(self.files[random.randint(0, len(self.files)-1)])
+        self.filedata = []
+        Thread(target = self.set_track, args = (self.files[random.randint(0, len(self.files)-1)], )).start()
+        #self.set_track(self.files[random.randint(0, len(self.files)-1)])
 
     def transition(old_track, new_track):
         pass
@@ -28,15 +30,18 @@ class Player:
         self.event = False
     
     def set_track(self, file):
-        print "Setting track to play"
+        print "START"
         self.file = file
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
         try:
             self.next_track(file+".dat")
+            print "Finished Good for",
         except:
         #    print "som tin wung"
             self.new_track = self.files[random.randint(0, len(self.files)-1)]
+            print "Finished Bad for",
+        print self.new_track
         #self.filedata = open(file+".dat", "w")
         self.filedata = []
 
@@ -62,7 +67,7 @@ class Player:
         if time.time()-self.t >=0.3:
             self.play_time.set(str(current_time))
             self.t = time.time()
-        print "Playing:",self.filename, "\tTime:", current_time,
+        #print "Playing:",self.filename, "\tTime:", current_time,
         if real:
             fftr=10*np.log10(np.sqrt(fft.imag**2+fft.real**2))[:len(pcm)/2]
             defv = len(fftr)/self.size
@@ -185,7 +190,8 @@ class Player:
             for line in self.filedata:
                 f.write(line)
             f.close()
-            self.set_track(self.new_track)
+            Thread(target = self.set_track, args = (self.new_track, )).start()
+            #self.set_track(self.new_track)
             self.time_counter = 0
             self.current_time = 0
             self.play()
