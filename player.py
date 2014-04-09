@@ -6,6 +6,7 @@ import numpy as np
 from operator import itemgetter
 from numpy import *
 import sys, time, math, datetime, random
+import subprocess
 
 class Player:
     def __init__(self, files):#, master):
@@ -34,6 +35,14 @@ class Player:
         self.file = file
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
+        
+        cmd = ['python', 'data_analizer_routine.py', '[FOLDER_NAME]', file, str(self.audio.real_duration)]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        for line in p.stdout:
+            print line
+        p.wait()
+        print p.returncode
+        
         ###############################################################
         #Aqui va un subproceso para evitar el lag del thread
         try:
