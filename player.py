@@ -34,15 +34,17 @@ class Player:
         self.file = file
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
+        ###############################################################
+        #Aqui va un subproceso para evitar el lag del thread
         try:
             self.next_track(file+".dat")
             print "Finished Good for",
         except:
-        #    print "som tin wung"
             self.new_track = self.files[random.randint(0, len(self.files)-1)]
             print "Finished Bad for",
         print self.new_track
-        #self.filedata = open(file+".dat", "w")
+        #Aqui termina el subproceso
+        ###############################################################
         self.filedata = []
 
     def play(self):
@@ -98,7 +100,9 @@ class Player:
             sys.stdout.write('\r')
             sys.stdout.flush()
             return (freq, fftr)
-    
+
+    ###############################################################
+    #Esta funcion desaparecera, se sustituye por el subproceso
     def data_analizer(self, current_file, current_patterns):
         patterns = []
         number = 0
@@ -154,7 +158,8 @@ class Player:
                 small_time = list_of_selections[i][1][1]
                 best_selection = list_of_selections[i][0]
         return best_selection
-    
+
+    #Esta funcion desaparecera, se sustituye por el subproceso
     def best_option(self, match):
         matching = float(match.keys()[0])
         times = []
@@ -170,13 +175,15 @@ class Player:
                     max = intn[i]
                     sel_time = times[i]
         return matching, sel_time, max
-    
+
+    #Esta funcion desaparecera, se sustituye por el subproceso
     def next_track(self, current_file):
         _file = open(current_file, "r").readlines()
         a = Analizer(_file)
         patterns = a.find_patterns()
         self.new_track = self.data_analizer(current_file, patterns)
-    
+    ###############################################################
+
     def update_audio(self):
         self.data = self.audio.get_data()
         while self.data != "" and self.event != False:
