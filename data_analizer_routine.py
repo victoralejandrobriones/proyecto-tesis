@@ -1,12 +1,11 @@
+from analizer import Analizer
 from operator import itemgetter
-import sys, glob, os
+import sys, glob, os, random
 
-new_track = None
 files = glob.glob(os.path.join(sys.argv[1], '*.wav'))
 current_file = sys.argv[2]
-real_duration = sys.argv[3]
+real_duration = float(sys.argv[3])
 files.remove(current_file)
-print files
 
 def data_analizer(current_file, current_patterns):
     patterns = []
@@ -81,7 +80,12 @@ def best_option(match):
     return matching, sel_time, max
 
 def next_track(current_file):
-    _file = open(current_file, "r").readlines()
+    _file = open(current_file+".dat", "r").readlines()
     a = Analizer(_file)
     patterns = a.find_patterns()
-    new_track = self.data_analizer(current_file, patterns)
+    print data_analizer(current_file+".dat", patterns)
+
+try:
+    next_track(current_file)
+except:
+    print files[random.randint(0, len(files)-1)]

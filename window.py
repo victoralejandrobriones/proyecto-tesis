@@ -2,12 +2,10 @@ from player import Player
 ###
 import Tkinter, glob, os, sys
 
-files = glob.glob(os.path.join(sys.argv[1], '*.wav'))
-
 class Window:
     
     def __init__(self, master):
-        self.player = Player(files)
+        self.player = Player(sys.argv[1])
         self.window = master
         self.time_label = Tkinter.StringVar()
         self.file_label = Tkinter.StringVar()
