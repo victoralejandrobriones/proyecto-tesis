@@ -35,15 +35,12 @@ class Player:
         self.file = file
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
-        
         cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
-        for cm in cmd:
-            print cm,
-        print
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
-        self.new_track = p.communicate()[0].split("\n")[0]
-        print self.new_track
+        data = p.communicate()
+        self.new_track = data[0].split("\n")[0]
+        print self.new_track, data[0].split("\n")[1],
         self.filedata = []
 
     def play(self):
@@ -109,7 +106,6 @@ class Player:
             self.data = self.audio.get_data()
         if self.data == "":
             #self.filedata.close()
-            print self.file
             f = open(self.file+".dat", "w")
             for line in self.filedata:
                 f.write(line)
