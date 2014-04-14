@@ -36,11 +36,12 @@ class Player:
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
         cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
+        #cmd = ['java', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
         data = p.communicate()
         self.new_track = data[0].split("\n")[0]
-        print self.new_track, data[0].split("\n")[1],
+        print self.new_track, data[0].split("\n")[1]+"\n",
         self.filedata = []
 
     def play(self):
@@ -93,8 +94,8 @@ class Player:
                     self.filedata.append(str(self.audio.current_time)+", "+str(60/(self.beat_counter[1]-self.beat_counter[0]))+"\n")
             else:
                 self.times=0
-            sys.stdout.write('\r')
-            sys.stdout.flush()
+            #sys.stdout.write('\r')
+            #sys.stdout.flush()
             return (freq, fftr)
 
     def update_audio(self):

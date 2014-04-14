@@ -83,9 +83,16 @@ def next_track(current_file):
     _file = open(current_file+".dat", "r").readlines()
     a = Analizer(_file)
     patterns = a.find_patterns()
-    print data_analizer(current_file+".dat", patterns)
+    data = data_analizer(current_file+".dat", patterns)
+    if data != None:
+        print data
+        print "from analizer\n"
+    else:
+        print files[random.randint(0, len(files)-1)]
+        print "from random\n"
 
 try:
     next_track(current_file)
 except:
     print files[random.randint(0, len(files)-1)]
+    print "from random\n"

@@ -26,6 +26,7 @@ class Analizer:
 
     def best_match(self, patterns):
         best_matches = []
+        it = 0
         for element in self.patterns:
             for _dict in element:
                 for key in _dict:
@@ -40,26 +41,22 @@ class Analizer:
                                 p_last = 0
                                 m_last = 0
                                 size = p_size if p_size <= m_size else m_size
-                                for iterator in range(size):
-                                    if iterator == 0:
-                                        p_last = pattern[iterator]
-                                        m_last = m_pattern[iterator]
-                                    else:
-                                        p_value = pattern[iterator]
-                                        m_value = m_pattern[iterator]
-                                        p_comparator = (p_value >= p_last)
-                                        m_comparator = (m_value >= m_last)
-                                        comparator = (p_comparator == m_comparator)
-                                        validator.append(comparator)
-                                comparator = True
-                                for value in validator:
-                                    if not value:
-                                        comparator = False
-                                if comparator:
-                                    if size != 1:
+                                if size > 4:
+                                    for iterator in range(size):
+                                        if iterator != 0:
+                                            value = (pattern[iterator] >= p_last) == (m_pattern[iterator] >= m_last)
+                                            if value == False:
+                                                validator = None
+                                                break
+                                            validator.append(value)
+                                        else:
+                                            p_last = pattern[iterator]
+                                            m_last = m_pattern[iterator]
+                                    if validator != None:
                                         best_matches.append((key, m_key, validator))
-                                        #print size, key, m_key, validator
+                                        #print it, "of", len(self.patterns), size, key, m_key, validator
                                         #print "*************"
+            it+=1
         return best_matches
                                 
     def find_patterns(self):
