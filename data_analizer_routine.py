@@ -91,8 +91,8 @@ def next_track(current_file):
         print files[random.randint(0, len(files)-1)]
         print "from random\n"
 
-try:
-    next_track(current_file)
-except:
-    print files[random.randint(0, len(files)-1)]
-    print "from random\n"
+#try:
+#    next_track(current_file)
+#except:
+print files[random.randint(0, len(files)-1)]
+print "from random\n"

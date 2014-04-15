@@ -36,7 +36,7 @@ class Player:
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
         cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
-        #cmd = ['java', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
+        #cmd = ['java', '-Xmx2g', '-d64', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
         data = p.communicate()
@@ -103,14 +103,16 @@ class Player:
         while self.data != "" and self.event != False:
             pcm = np.fromstring(self.data, "Int16")
             self.freq_analizer(pcm)
-            self.audio.stream.write(self.data)
+            #self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
         if self.data == "":
             #self.filedata.close()
-            f = open(self.file+".dat", "w")
-            for line in self.filedata:
-                f.write(line)
-            f.close()
+            if len(self.filedata)>0:
+                f = open(self.file+".dat", "w")
+                for line in self.filedata:
+                    f.write(line)
+                f.close()
+            self.filedata = []
             Thread(target = self.set_track, args = (self.new_track, )).start()
             #self.set_track(self.new_track)
             self.time_counter = 0
