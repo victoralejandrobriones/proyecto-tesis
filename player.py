@@ -32,11 +32,12 @@ class Player:
         self.event = False
     
     def set_track(self, file):
+        self.current_time = 0
         self.file = file
         self.filename = file.split("/")[-1]
         self.audio = Audio(file)
-        cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
-        #cmd = ['java', '-Xmx2g', '-d64', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
+        #cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
+        cmd = ['java', '-Xmx2g', '-d64', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
         data = p.communicate()

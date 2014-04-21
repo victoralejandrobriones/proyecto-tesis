@@ -73,7 +73,6 @@ public class Analizer {
 									}
 								}
 								if(validator != null){
-									System.out.println(iter+" of "+this.patterns.size()+" "+size+" "+key+" "+m_key);
 									best_matches.add(new Tuple_best_matches(key, m_key, validator));
 								}
 							}

@@ -38,6 +38,7 @@ def data_analizer(current_file, current_patterns):
             dict_list.append([match[1], match[2]])
         selection = []
         for match in reversed(match_dict):
+            print match
             selection.append(best_option(match))
         allow_time = real_duration
         allow_time = allow_time-(allow_time*.15)
@@ -91,8 +92,8 @@ def next_track(current_file):
         print files[random.randint(0, len(files)-1)]
         print "from random\n"
 
-#try:
-#    next_track(current_file)
-#except:
-print files[random.randint(0, len(files)-1)]
-print "from random\n"
+try:
+    next_track(current_file)
+except:
+    print files[random.randint(0, len(files)-1)]
+    print "from random\n"

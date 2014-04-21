@@ -5,6 +5,9 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -12,31 +15,34 @@ public class data_analizer_routine {
 
 	static float real_duration;
 	static File[] files;
+	static String current_file;
 	public static void main(String[] args) {
 		files = Filter.finder(args[0]);
-		String current_file = args[1];
+		current_file = args[1];
 		real_duration = Float.valueOf(args[2]);
+
 		ArrayList<String[]> file = readFileLines(current_file+".dat");
 		Analizer analizer = new Analizer(file);
 		ArrayList<Map<Float,ArrayList<Integer>>> patterns = analizer.find_patterns();
-		
-//		ArrayList<String[]> a_data_list = readFileLines(files[1].getPath()+".dat");
-//		ArrayList<String[]> b_data_list = readFileLines(files[3].getPath()+".dat");
-		
-//		long startTime = System.currentTimeMillis();
-//		Analizer a = new Analizer(a_data_list);
-//		a.find_patterns();
-//		Analizer b = new Analizer(b_data_list);
-//		a.best_match(b.find_patterns());
-//		System.out.println((System.currentTimeMillis() - startTime)/1000);
-//		System.out.println(files[1].getPath()+" and "+files[3].getPath());
+		data_analizer_routine self = new data_analizer_routine();
+		String data = self.data_analizer(current_file+".dat", patterns);
+		//		ArrayList<String[]> a_data_list = readFileLines(files[1].getPath()+".dat");
+		//		ArrayList<String[]> b_data_list = readFileLines(files[3].getPath()+".dat");
 
+		//		long startTime = System.currentTimeMillis();
+		//		Analizer a = new Analizer(a_data_list);
+		//		a.find_patterns();
+		//		Analizer b = new Analizer(b_data_list);
+		//		a.best_match(b.find_patterns());
+		//		System.out.println((System.currentTimeMillis() - startTime)/1000);
+		//		System.out.println(files[1].getPath()+" and "+files[3].getPath());
+		System.out.println(data);
 	}
-	
-	public void data_analizer(String current_file, int current_patterns){
+
+	public String data_analizer(String current_file, ArrayList<Map<Float, ArrayList<Integer>>> current_patterns){
 		ArrayList<Tuple_data_analizer> patterns = new ArrayList<data_analizer_routine.Tuple_data_analizer>();
 		int number = 0;
-//		list_of_selections = []
+		ArrayList<Tuple_selections> list_of_selections = new ArrayList<Tuple_selections>();
 		for(File file_name: files){
 			if(!(file_name.getPath()+".dat").matches(current_file)){
 				ArrayList<String[]> _file = readFileLines(file_name.getPath()+".dat");
@@ -44,66 +50,90 @@ public class data_analizer_routine {
 				patterns.add(new Tuple_data_analizer(file_name.getPath(), a));
 			}
 		}
-//	    for next_file in patterns:
-//	        matches = next_file[1].best_match(current_patterns)
-//	        match_filter = []
-//	        for match in matches:
-//	            if float(match[0]) < float(match[1]):
-//	                match_filter.append([match[1], match[0], len(match[2])])
-//	        last = None
-//	        dict_list = []
-//	        match_dict = []
-//	        for match in sorted(match_filter, key=itemgetter(0)):
-//	            if last != match[0]:
-//	                if last!= None:
-//	                    match_dict.append({last:dict_list})
-//	                last = match[0]
-//	                dict_list = []
-//	            dict_list.append([match[1], match[2]])
-//	        selection = []
-//	        for match in reversed(match_dict):
-//	            selection.append(best_option(match))
-//	        allow_time = real_duration
-//	        allow_time = allow_time-(allow_time*.15)
-//	        filter_selection = []
-//	        for element in selection:
-//	            if element[0] > allow_time:
-//	                filter_selection.append(element)
-//	        small_time = 0
-//	        for sel in sorted(filter_selection, key=itemgetter(1)):
-//	            if sel[2]!=0:
-//	                if small_time == 0:
-//	                    small_time = sel
-//	                if small_time[1] > sel[1]:
-//	                    small_time = sel
-//	        list_of_selections.append([next_file[0],small_time])
-//	    best_selection = None
-//	    small_time = None
-//	    for i in range(len(list_of_selections)):
-//	        if small_time == None:
-//	            small_time = list_of_selections[i][1][1]
-//	        if small_time < list_of_selections[i][1][1]:
-//	            small_time = list_of_selections[i][1][1]
-//	            best_selection = list_of_selections[i][0]
-//	    return best_selection
+		for(Tuple_data_analizer next_file: patterns){
+			Analizer a = next_file.getAnalizer();
+			a.find_patterns();
+			ArrayList<Tuple_best_matches> matches = a.best_match(current_patterns);
+			ArrayList<Tuple_match_filter> match_filter = new ArrayList<Tuple_match_filter>();
+			for(Tuple_best_matches match: matches){
+				if(match.getKey() < match.getMKey()){
+					match_filter.add(new Tuple_match_filter(match.getMKey(), match.getKey(), match.getValidator().length));
+				}
+			}
+			float last = (float) -1.0;
+			ArrayList<Tuple_match_filter> dict_list = new ArrayList<Tuple_match_filter>();
+			Map<Float, ArrayList<Tuple_match_filter>> match_dict = new HashMap<Float, ArrayList<Tuple_match_filter>>();
+			Collections.sort(match_filter);
+			for(Tuple_match_filter match:match_filter){
+				if(last!=match.getMKey()){
+					if(last!=-1.0){
+						match_dict.put(last, dict_list);
+					}
+					last = match.getMKey();
+					dict_list = new ArrayList<Tuple_match_filter>();
+				}
+
+				dict_list.add(new Tuple_match_filter(-1, match.getKey(), match.getLength(), 1));
+			}
+			ArrayList<Tuple_matching> selection = new ArrayList<Tuple_matching>();
+			for(float match:match_dict.keySet()){
+				selection.add(best_option(match, match_dict.get(match)));
+			}
+			float allow_time = real_duration;
+			allow_time = (float) (allow_time-(allow_time*.15));
+			ArrayList<Tuple_matching>filter_selection = new ArrayList<Tuple_matching>();
+			for(Tuple_matching element:selection){
+				if(element.getMatching() > allow_time)
+					filter_selection.add(element);	
+			}
+			Tuple_matching small_time = null;
+			Collections.sort(filter_selection);
+			for(Tuple_matching sel:filter_selection){
+				if(sel.getMax() != 0){
+					if(small_time == null)
+						small_time = sel;
+					if(small_time.getSelTime() > sel.getSelTime())
+						small_time = sel;
+				}
+			}
+			list_of_selections .add(new Tuple_selections(next_file.getFileName(), small_time));
+		}
+		String best_selection = new String();
+		float small_time = 0;
+		for(int i = 0; i < list_of_selections.size(); i++){
+			if (small_time == 0)
+				small_time = list_of_selections.get(i).getSmallTime().getSelTime();
+			if (small_time <= list_of_selections.get(i).getSmallTime().getSelTime()){
+				small_time = list_of_selections.get(i).getSmallTime().getSelTime();
+				best_selection = new String();
+				best_selection = best_selection.concat(list_of_selections.get(i).getFileName());
+			}
+		}
+		return best_selection;
 	}
-//	
-//	def best_option(match):
-//	    matching = float(match.keys()[0])
-//	    times = []
-//	    intn = []
-//	    for element in reversed(sorted(match[match.keys()[0]], key=itemgetter(1))):
-//	        times.append(element[0])
-//	        intn.append(element[1])
-//	    max = 0
-//	    sel_time = 0
-//	    for i in range(len(intn)):
-//	        if matching - times[i] > matching/3:
-//	            if intn[i]>max:
-//	                max = intn[i]
-//	                sel_time = times[i]
-//	    return matching, sel_time, max
-	
+
+	public Tuple_matching best_option(float matching, ArrayList<Tuple_match_filter> match){
+		ArrayList<Float>times = new ArrayList<Float>();
+		ArrayList<Integer> intn = new ArrayList<Integer>();
+		Collections.sort(match);
+		Collections.reverse(match);
+		for(Tuple_match_filter element:match){
+			times.add(element.getKey());
+			intn.add(element.getLength());
+		}
+		float max = 0;
+		float sel_time = 0;
+		for(int i = 0; i<intn.size(); i++){
+			if(matching - times.get(i) > matching / 3){
+				if(intn.get(i)>max){
+					max = intn.get(i);
+					sel_time = times.get(i);
+				}
+			}
+		}
+		return new Tuple_matching(matching, sel_time, max);
+	}
+
 	public static ArrayList<String[]> readFileLines(String fileName){
 		File file = new File(fileName);
 		BufferedReader br;
@@ -112,8 +142,8 @@ public class data_analizer_routine {
 		try {
 			br = new BufferedReader(new FileReader(file.getPath()));
 			while ((line = br.readLine()) != null) {
-			   String [] data = line.split(", ");
-			   list.add(data);
+				String [] data = line.split(", ");
+				list.add(data);
 			}
 			br.close();
 		} catch (FileNotFoundException e) {
@@ -125,26 +155,114 @@ public class data_analizer_routine {
 		}
 		return list;
 	}
-	
+
 	private class Tuple_data_analizer{
-		
+
 		String file_name;
 		Analizer analizer;
-		
+
 		public Tuple_data_analizer(String file_name, Analizer analizer){
 			this.file_name = file_name;
 			this.analizer = analizer;
 		}
-		
+
 		public String getFileName(){
 			return file_name;
 		}
-		
+
 		public Analizer getAnalizer(){
 			return analizer;
 		}
 	}
 
+	private class Tuple_match_filter implements Comparable<Tuple_match_filter>{
+
+		float mKey;
+		float key;
+		int length;
+		int comparator;
+
+		public Tuple_match_filter(float mKey, float key, int length){
+			this.mKey = mKey;
+			this.key = key;
+			this.length = length;
+		}
+
+		public Tuple_match_filter(float mKey, float key, int length, int comparator){
+			this.mKey = mKey;
+			this.key = key;
+			this.length = length;
+			this.comparator = comparator;
+		}
+
+		public float getMKey(){
+			return mKey;
+		}
+
+		public float getKey(){
+			return key;
+		}
+		public int getLength(){
+			return length;
+		}
+
+		@Override
+		public int compareTo(Tuple_match_filter o) {
+			if(comparator==1)
+				return (int) (key - o.getKey());
+			else
+				return (int) (mKey - o.getMKey());
+		}
+	}
+
+	private class Tuple_matching implements Comparable<Tuple_matching>{
+
+		float matching;
+		float sel_time;
+		float max;
+
+		public Tuple_matching(float matching, float sel_time, float max){
+			this.matching = matching;
+			this.sel_time = sel_time;
+			this.max = max;
+		}
+
+		public float getMatching(){
+			return matching;
+		}
+
+		public float getSelTime(){
+			return sel_time;
+		}
+		public float getMax(){
+			return max;
+		}
+
+		@Override
+		public int compareTo(Tuple_matching o) {
+			return (int) (this.sel_time-o.getSelTime());
+		}
+	}
+	
+	private class Tuple_selections{
+
+		String file_name;
+		Tuple_matching small_time;
+
+		public Tuple_selections(String file_name, Tuple_matching small_time){
+			this.file_name = file_name;
+			this.small_time = small_time;
+		}
+
+		public String getFileName(){
+			return file_name;
+		}
+
+		public Tuple_matching getSmallTime(){
+			return small_time;
+		}
+	}
+	
 	public static class Filter {
 		public static File[] finder( String dirName){
 			File dir = new File(dirName);
