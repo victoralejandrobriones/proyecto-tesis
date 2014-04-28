@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 public class data_analizer_routine {
@@ -17,38 +19,41 @@ public class data_analizer_routine {
 	static File[] files;
 	static String current_file;
 	public static void main(String[] args) {
-		files = Filter.finder(args[0]);
 		current_file = args[1];
+		files = removeElement(Filter.finder(args[0]), new File(current_file));
 		real_duration = Float.valueOf(args[2]);
-
 		ArrayList<String[]> file = readFileLines(current_file+".dat");
-		Analizer analizer = new Analizer(file);
-		ArrayList<Map<Float,ArrayList<Integer>>> patterns = analizer.find_patterns();
-		data_analizer_routine self = new data_analizer_routine();
-		String data = self.data_analizer(current_file+".dat", patterns);
-		//		ArrayList<String[]> a_data_list = readFileLines(files[1].getPath()+".dat");
-		//		ArrayList<String[]> b_data_list = readFileLines(files[3].getPath()+".dat");
-
-		//		long startTime = System.currentTimeMillis();
-		//		Analizer a = new Analizer(a_data_list);
-		//		a.find_patterns();
-		//		Analizer b = new Analizer(b_data_list);
-		//		a.best_match(b.find_patterns());
-		//		System.out.println((System.currentTimeMillis() - startTime)/1000);
-		//		System.out.println(files[1].getPath()+" and "+files[3].getPath());
-		System.out.println(data);
+		try{
+			Analizer analizer = new Analizer(file);
+			ArrayList<Map<Float,ArrayList<Integer>>> patterns = analizer.find_patterns();
+			data_analizer_routine self = new data_analizer_routine();
+			String data = self.data_analizer(patterns);
+			System.out.println(data);
+		}
+		catch(NullPointerException e){
+			final Random r=new Random(System.currentTimeMillis());
+			System.out.println(files[r.nextInt(files.length-1)]);
+		}
 	}
 
-	public String data_analizer(String current_file, ArrayList<Map<Float, ArrayList<Integer>>> current_patterns){
+	public static File[] removeElement(File[] input, File deleteMe) {
+		List<File> result = new LinkedList<File>();
+
+		for(File item : input)
+			if(!deleteMe.toString().matches(item.toString()))
+				result.add(item);
+
+		return result.toArray(new File[]{});
+	}
+
+	public String data_analizer(ArrayList<Map<Float, ArrayList<Integer>>> current_patterns){
 		ArrayList<Tuple_data_analizer> patterns = new ArrayList<data_analizer_routine.Tuple_data_analizer>();
 		int number = 0;
 		ArrayList<Tuple_selections> list_of_selections = new ArrayList<Tuple_selections>();
 		for(File file_name: files){
-			if(!(file_name.getPath()+".dat").matches(current_file)){
-				ArrayList<String[]> _file = readFileLines(file_name.getPath()+".dat");
-				Analizer a = new Analizer(_file);
-				patterns.add(new Tuple_data_analizer(file_name.getPath(), a));
-			}
+			ArrayList<String[]> _file = readFileLines(file_name.getPath()+".dat");
+			Analizer a = new Analizer(_file);
+			patterns.add(new Tuple_data_analizer(file_name.getPath(), a));
 		}
 		for(Tuple_data_analizer next_file: patterns){
 			Analizer a = next_file.getAnalizer();
@@ -243,7 +248,7 @@ public class data_analizer_routine {
 			return (int) (this.sel_time-o.getSelTime());
 		}
 	}
-	
+
 	private class Tuple_selections{
 
 		String file_name;
@@ -262,7 +267,7 @@ public class data_analizer_routine {
 			return small_time;
 		}
 	}
-	
+
 	public static class Filter {
 		public static File[] finder( String dirName){
 			File dir = new File(dirName);

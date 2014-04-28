@@ -14,6 +14,7 @@ class Player:
         self.files = glob.glob(os.path.join(directory, '*.wav'))
         self.times = 0
         self.size = 8
+        self.locked = False
         self.beat_counter = [0,0]
         self.beat_buffer = [0,0]
         self.beat_time = time.time()
@@ -38,11 +39,12 @@ class Player:
         self.audio = Audio(file)
         #cmd = ['python', 'data_analizer_routine.py', self.directory, file, str(self.audio.real_duration)]
         cmd = ['java', '-Xmx2g', '-d64', 'data_analizer_routine', self.directory, file, str(self.audio.real_duration)]
+        self.locked = True
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
+        self.locked = False
         data = p.communicate()
         self.new_track = data[0].split("\n")[0]
-        print self.new_track, data[0].split("\n")[1]+"\n",
         self.filedata = []
 
     def play(self):
@@ -104,7 +106,7 @@ class Player:
         while self.data != "" and self.event != False:
             pcm = np.fromstring(self.data, "Int16")
             self.freq_analizer(pcm)
-            #self.audio.stream.write(self.data)
+            self.audio.stream.write(self.data)
             self.data = self.audio.get_data()
         if self.data == "":
             #self.filedata.close()
@@ -114,7 +116,11 @@ class Player:
                     f.write(line)
                 f.close()
             self.filedata = []
-            Thread(target = self.set_track, args = (self.new_track, )).start()
+            if self.locked == False:
+            	Thread(target = self.set_track, args = (self.new_track, )).start()
+            	print "New process"
+            else:
+            	print "Another process is running"
             #self.set_track(self.new_track)
             self.time_counter = 0
             self.current_time = 0
